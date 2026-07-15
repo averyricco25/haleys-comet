@@ -8,6 +8,7 @@ import Search from './pages/Search'
 import ShowDetail from './pages/ShowDetail'
 import MovieDetail from './pages/MovieDetail'
 import Profile from './pages/Profile'
+import Import from './pages/Import'
 import BottomNav from './components/BottomNav'
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/show/:id" element={<ShowDetail />} />
           <Route path="/movie/:id" element={<MovieDetail />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/import" element={<Import />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

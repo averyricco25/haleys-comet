@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useShows } from '../context/ShowsContext'
 
@@ -66,7 +67,10 @@ export default function Profile() {
           <div className="stat"><span className="stat-num">★ {avgRating}</span><span className="stat-label">Avg rating</span></div>
         )}
       </div>
-      <button className="btn btn-ghost" onClick={signOut} style={{ marginTop: '2rem', width: '100%' }}>
+      <Link to="/import" className="btn btn-ghost" style={{ marginTop: '2rem', width: '100%' }}>
+        📥 Import from Trakt
+      </Link>
+      <button className="btn btn-ghost" onClick={signOut} style={{ marginTop: '0.75rem', width: '100%' }}>
         Sign out
       </button>
     </>

@@ -3,7 +3,7 @@
 // { id, name, image, status: 'watchlist'|'watching'|'finished',
 //   rating: 0-5, watched: [episodeIds], totalEpisodes, premiered, network, genres, updatedAt }
 import { db } from '../firebase'
-import { collection, doc, getDocs, setDoc, deleteDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore'
 
 const LOCAL_KEY = 'comet-shows'
 
@@ -37,6 +37,25 @@ export async function persistShow(user, show) {
     return
   }
   await setDoc(doc(db, 'users', user.uid, 'shows', String(show.id)), show)
+}
+
+// Bulk write for imports: batches of 400 (Firestore limit is 500 per batch)
+export async function persistMany(user, docs, onProgress) {
+  if (user.isGuest) {
+    const shows = readLocal()
+    for (const d of docs) shows[d.id] = d
+    writeLocal(shows)
+    if (onProgress) onProgress(docs.length, docs.length)
+    return
+  }
+  for (let i = 0; i < docs.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const d of docs.slice(i, i + 400)) {
+      batch.set(doc(db, 'users', user.uid, 'shows', String(d.id)), d)
+    }
+    await batch.commit()
+    if (onProgress) onProgress(Math.min(i + 400, docs.length), docs.length)
+  }
 }
 
 export async function deleteShow(user, showId) {
