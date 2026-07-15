@@ -37,4 +37,23 @@ export async function tvRecommendations(id) {
   return data.results
 }
 
+// mediaType is 'tv' or 'movie'
+export async function trending(mediaType) {
+  const data = await get(`/trending/${mediaType}/week`)
+  return data.results
+}
+
+export async function nowPlayingMovies() {
+  const data = await get('/movie/now_playing', { region: 'US' })
+  return data.results
+}
+
+export async function discoverMedia(mediaType, { genreId, providers } = {}) {
+  const params = { sort_by: 'popularity.desc', include_adult: 'false', watch_region: 'US' }
+  if (genreId) params.with_genres = String(genreId)
+  if (providers?.length) params.with_watch_providers = providers.join('|')
+  const data = await get(`/discover/${mediaType}`, params)
+  return data.results
+}
+
 export const posterUrl = (path, size = 'w342') => (path ? `${IMG}/${size}${path}` : null)

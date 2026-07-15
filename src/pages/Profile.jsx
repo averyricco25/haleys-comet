@@ -67,8 +67,11 @@ export default function Profile() {
           <div className="stat"><span className="stat-num">★ {avgRating}</span><span className="stat-label">Avg rating</span></div>
         )}
       </div>
-      <Link to="/import" className="btn btn-ghost" style={{ marginTop: '2rem', width: '100%' }}>
-        📥 Import from Trakt
+      <Link to="/services" className="btn btn-ghost" style={{ marginTop: '2rem', width: '100%' }}>
+        📡 My streaming services
+      </Link>
+      <Link to="/import" className="btn btn-ghost" style={{ marginTop: '0.75rem', width: '100%' }}>
+        📥 Import my data from another app
       </Link>
       <button className="btn btn-ghost" onClick={signOut} style={{ marginTop: '0.75rem', width: '100%' }}>
         Sign out

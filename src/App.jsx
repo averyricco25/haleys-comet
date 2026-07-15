@@ -9,6 +9,7 @@ import ShowDetail from './pages/ShowDetail'
 import MovieDetail from './pages/MovieDetail'
 import Profile from './pages/Profile'
 import Import from './pages/Import'
+import Services from './pages/Services'
 import BottomNav from './components/BottomNav'
 
 export default function App() {
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/movie/:id" element={<MovieDetail />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/import" element={<Import />} />
+          <Route path="/services" element={<Services />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

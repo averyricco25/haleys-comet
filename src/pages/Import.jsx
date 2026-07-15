@@ -4,9 +4,16 @@ import { useShows } from '../context/ShowsContext'
 import { parseTraktZip, runImport } from '../lib/importTrakt'
 import { persistMany } from '../lib/storage'
 
+const SOURCES = [
+  { key: 'trakt', name: 'Trakt', icon: '📀', ready: true, hint: 'Export zip from trakt.tv → Settings → Data' },
+  { key: 'tvtime', name: 'TV Time', icon: '⏰', ready: false, hint: 'Coming soon' },
+  { key: 'other', name: 'Other apps', icon: '📦', ready: false, hint: 'Coming soon' },
+]
+
 export default function Import() {
   const { user } = useAuth()
   const { shows } = useShows()
+  const [source, setSource] = useState(null)
   const [parsed, setParsed] = useState(null)
   const [parseError, setParseError] = useState(null)
   const [progress, setProgress] = useState(null)
@@ -53,11 +60,39 @@ export default function Import() {
   const watchlistCount = parsed?.watchlist?.length || 0
   const pct = progress?.total ? Math.round((progress.done / progress.total) * 100) : 0
 
+  if (!source) {
+    return (
+      <>
+        <header className="page-header">
+          <h1>Import</h1>
+          <p className="page-sub">Bring your watch history over from another app</p>
+        </header>
+        <div className="source-list">
+          {SOURCES.map((s) => (
+            <button
+              key={s.key}
+              className="source-card"
+              disabled={!s.ready}
+              onClick={() => setSource(s.key)}
+            >
+              <span className="source-icon">{s.icon}</span>
+              <span className="source-info">
+                <span className="source-name">{s.name}</span>
+                <span className="source-hint">{s.hint}</span>
+              </span>
+              {s.ready ? <span className="source-arrow">→</span> : null}
+            </button>
+          ))}
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
+      <button className="back-btn" onClick={() => setSource(null)}>← Back</button>
       <header className="page-header">
-        <h1>Import</h1>
-        <p className="page-sub">Bring your history over from Trakt</p>
+        <h1>Import from Trakt</h1>
       </header>
 
       <div className="import-card">

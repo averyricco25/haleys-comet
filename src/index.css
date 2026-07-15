@@ -397,6 +397,45 @@ ul { list-style: none; }
 .import-unmatched { color: var(--text-dim); font-size: 0.8rem; padding-left: 1.2rem; margin-top: 0.5rem; list-style: disc; }
 .import-card details summary { color: var(--text-dim); cursor: pointer; font-size: 0.85rem; }
 
+/* ---------- Streaming services ---------- */
+.svc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.svc-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-raised);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 0.9rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+}
+.svc-chip.active { border-color: var(--gold); background: var(--bg-card); }
+.svc-icon { font-size: 1.2rem; }
+.svc-check { margin-left: auto; color: var(--gold); font-weight: 800; }
+
+/* ---------- Import source picker ---------- */
+.source-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.source-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--bg-raised);
+  border: none;
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 1.1rem;
+  text-align: left;
+}
+.source-card:disabled { opacity: 0.45; cursor: default; }
+.source-icon { font-size: 1.6rem; }
+.source-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
+.source-name { font-weight: 700; font-size: 1rem; }
+.source-hint { color: var(--text-dim); font-size: 0.8rem; }
+.source-arrow { color: var(--gold); font-size: 1.2rem; }
+
 /* ---------- Bottom nav ---------- */
 .bottom-nav {
   position: fixed;

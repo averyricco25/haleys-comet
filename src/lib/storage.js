@@ -3,9 +3,10 @@
 // { id, name, image, status: 'watchlist'|'watching'|'finished',
 //   rating: 0-5, watched: [episodeIds], totalEpisodes, premiered, network, genres, updatedAt }
 import { db } from '../firebase'
-import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore'
 
 const LOCAL_KEY = 'comet-shows'
+const PREFS_KEY = 'comet-prefs'
 
 function readLocal() {
   try {
@@ -37,6 +38,27 @@ export async function persistShow(user, show) {
     return
   }
   await setDoc(doc(db, 'users', user.uid, 'shows', String(show.id)), show)
+}
+
+// User preferences (e.g. streaming services). Stored per-user, outside the shows collection.
+export async function loadPrefs(user) {
+  if (user.isGuest) {
+    try {
+      return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}
+    } catch {
+      return {}
+    }
+  }
+  const snap = await getDoc(doc(db, 'users', user.uid, 'settings', 'prefs'))
+  return snap.exists() ? snap.data() : {}
+}
+
+export async function savePrefs(user, prefs) {
+  if (user.isGuest) {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs))
+    return
+  }
+  await setDoc(doc(db, 'users', user.uid, 'settings', 'prefs'), prefs)
 }
 
 // Bulk write for imports: batches of 400 (Firestore limit is 500 per batch)

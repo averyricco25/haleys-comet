@@ -1,50 +1,98 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { searchShows, singleSearchShow, stripHtml } from '../lib/tvmaze'
-import { searchMovies, posterUrl, isTmdbConfigured } from '../lib/tmdb'
+import {
+  searchMovies,
+  posterUrl,
+  isTmdbConfigured,
+  trending,
+  nowPlayingMovies,
+  discoverMedia,
+} from '../lib/tmdb'
 import { getRecommendations } from '../lib/recommend'
 import { useShows } from '../context/ShowsContext'
+import { useAuth } from '../context/AuthContext'
+import { loadPrefs } from '../lib/storage'
+import RecRow from '../components/RecRow'
 
-function RecRow({ title, items, onOpen }) {
-  if (!items || items.length === 0) return null
-  return (
-    <div className="rec-section">
-      <h2 className="section-title">{title}</h2>
-      <div className="rec-row">
-        {items.map((r) => (
-          <button key={r.id} className="rec-card" onClick={() => onOpen(r)}>
-            {r.image ? (
-              <img src={r.image} alt={r.name} className="rec-poster" loading="lazy" />
-            ) : (
-              <div className="rec-poster poster-empty">📺</div>
-            )}
-            <span className="rec-name">{r.name}</span>
-            {r.year && <span className="rec-year">{r.year}</span>}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
+const mapTmdbItem = (r) => ({
+  id: r.id,
+  name: r.title || r.name,
+  image: posterUrl(r.poster_path, 'w185'),
+  year: (r.release_date || r.first_air_date || '').slice(0, 4),
+})
+
+const TV_GENRES = [
+  ['😂 Comedy', 35],
+  ['🎭 Drama', 18],
+  ['🕵️ Crime', 80],
+  ['🚀 Sci-Fi & Fantasy', 10765],
+  ['📸 Reality', 10764],
+]
+const MOVIE_GENRES = [
+  ['😂 Comedy', 35],
+  ['👻 Horror', 27],
+  ['💥 Action', 28],
+  ['💘 Romance', 10749],
+  ['🔪 Thriller', 53],
+]
+
+const feedCache = new Map()
+
+async function loadFeed(mode, providers) {
+  const key = `${mode}|${(providers || []).join(',')}`
+  if (feedCache.has(key)) return feedCache.get(key)
+  const mediaType = mode === 'movies' ? 'movie' : 'tv'
+  const svc = providers?.length ? ' on your services' : ''
+  const jobs = [[`🔥 Trending ${mode === 'movies' ? 'movies' : 'shows'} this week`, trending(mediaType)]]
+  if (mode === 'movies') jobs.push(['🎬 New in theaters', nowPlayingMovies()])
+  jobs.push([`⭐ Popular${svc}`, discoverMedia(mediaType, { providers })])
+  for (const [label, genreId] of mode === 'movies' ? MOVIE_GENRES : TV_GENRES) {
+    jobs.push([`${label}${svc}`, discoverMedia(mediaType, { genreId, providers })])
+  }
+  const settled = await Promise.allSettled(jobs.map((j) => j[1]))
+  const rows = settled
+    .map((s, i) => ({
+      title: jobs[i][0],
+      items: s.status === 'fulfilled' ? s.value.slice(0, 12).map(mapTmdbItem) : [],
+    }))
+    .filter((r) => r.items.length > 0)
+  feedCache.set(key, rows)
+  return rows
 }
 
 export default function Search() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { shows, loaded } = useShows()
-  const [recs, setRecs] = useState(null)
-  const [resolving, setResolving] = useState(false)
   const mode = params.get('mode') === 'movies' ? 'movies' : 'shows'
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState(null)
+  const [recs, setRecs] = useState(null)
+  const [feed, setFeed] = useState(null)
+  const [services, setServices] = useState(null)
+  const [resolving, setResolving] = useState(false)
   const debounce = useRef(null)
+
+  useEffect(() => {
+    if (!isTmdbConfigured) return
+    loadPrefs(user).then((p) => setServices(p.services || []))
+  }, [user])
 
   useEffect(() => {
     if (loaded && isTmdbConfigured) {
       getRecommendations(shows).then(setRecs).catch(() => {})
     }
   }, [loaded]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isTmdbConfigured || services === null) return
+    setFeed(null)
+    loadFeed(mode, services).then(setFeed).catch(() => setFeed([]))
+  }, [mode, services])
 
   const openRecShow = async (rec) => {
     setResolving(true)
@@ -57,6 +105,7 @@ export default function Search() {
       setResolving(false)
     }
   }
+  const openItem = mode === 'movies' ? (r) => navigate(`/movie/${r.id}`) : openRecShow
 
   const runSearch = async (q, m) => {
     if (!q.trim()) {
@@ -144,7 +193,6 @@ export default function Search() {
           placeholder={mode === 'movies' ? 'Search for a movie…' : 'Search for a show…'}
           value={query}
           onChange={onChange}
-          autoFocus
         />
       </div>
       {error && <p className="error">{error}</p>}
@@ -170,30 +218,36 @@ export default function Search() {
           </li>
         ))}
       </ul>
-      {!results && !searching && (
+      {!results && !searching && isTmdbConfigured && (
         <>
           {resolving && <p className="muted center">Opening…</p>}
-          {mode === 'shows' ? (
-            <RecRow title="✨ Shows for you" items={recs?.shows} onOpen={openRecShow} />
-          ) : (
-            <RecRow title="✨ Movies for you" items={recs?.movies} onOpen={(r) => navigate(`/movie/${r.id}`)} />
-          )}
-          {(!recs || (mode === 'shows' ? recs.shows : recs.movies)?.length === 0) && (
-            <div className="empty">
-              <span className="empty-icon">🔭</span>
-              <p>
-                {mode === 'movies'
-                  ? 'Search any movie to rate it and add it to your lists.'
-                  : 'Search any TV show to see seasons, episodes, and add it to your lists.'}
-              </p>
-            </div>
+          <RecRow
+            title={mode === 'movies' ? '✨ Movies for you' : '✨ Shows for you'}
+            items={mode === 'movies' ? recs?.movies : recs?.shows}
+            onOpen={openItem}
+          />
+          {feed === null && <p className="muted center">Loading Discover…</p>}
+          {(feed || []).map((row) => (
+            <RecRow key={row.title} title={row.title} items={row.items} onOpen={openItem} />
+          ))}
+          {services !== null && services.length === 0 && (
+            <p className="import-help center">
+              💡 <Link to="/services" style={{ color: 'var(--gold)' }}>Pick your streaming services</Link> to
+              tailor these rows to what you can watch.
+            </p>
           )}
         </>
+      )}
+      {!results && !searching && !isTmdbConfigured && mode === 'shows' && (
+        <div className="empty">
+          <span className="empty-icon">🔭</span>
+          <p>Search any TV show to see seasons, episodes, and add it to your lists.</p>
+        </div>
       )}
       <p className="attribution">
         {mode === 'movies'
           ? 'Movie data from TMDB. This app uses the TMDB API but is not endorsed or certified by TMDB.'
-          : 'Show data from TVMaze.'}
+          : 'Show data from TVMaze; discovery rows from TMDB.'}
       </p>
     </>
   )
