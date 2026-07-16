@@ -13,6 +13,7 @@ import { getRecommendations } from '../lib/recommend'
 import { useShows } from '../context/ShowsContext'
 import { useAuth } from '../context/AuthContext'
 import { loadPrefs } from '../lib/storage'
+import { SERVICES } from '../lib/services'
 import RecRow from '../components/RecRow'
 
 const mapTmdbItem = (r) => ({
@@ -47,6 +48,12 @@ async function loadFeed(mode, providers) {
   const jobs = [[`🔥 Trending ${mode === 'movies' ? 'movies' : 'shows'} this week`, trending(mediaType)]]
   if (mode === 'movies') jobs.push(['🎬 New in theaters', nowPlayingMovies()])
   jobs.push([`⭐ Popular${svc}`, discoverMedia(mediaType, { providers })])
+  for (const svcId of providers || []) {
+    const service = SERVICES.find((s) => s.id === svcId)
+    if (service) {
+      jobs.push([`${service.icon} Streaming on ${service.name}`, discoverMedia(mediaType, { providers: [svcId] })])
+    }
+  }
   for (const [label, genreId] of mode === 'movies' ? MOVIE_GENRES : TV_GENRES) {
     jobs.push([`${label}${svc}`, discoverMedia(mediaType, { genreId, providers })])
   }

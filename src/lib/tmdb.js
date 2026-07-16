@@ -48,6 +48,19 @@ export async function nowPlayingMovies() {
   return data.results
 }
 
+// US streaming availability. mediaType is 'tv' or 'movie'.
+export async function watchProviders(mediaType, id) {
+  const data = await get(`/${mediaType}/${id}/watch/providers`)
+  return data.results?.US || null
+}
+
+export async function findTvByImdb(imdbId) {
+  const data = await get(`/find/${imdbId}`, { external_source: 'imdb_id' })
+  return data.tv_results?.[0] || null
+}
+
+export const providerLogo = (path) => (path ? `https://image.tmdb.org/t/p/w92${path}` : null)
+
 export async function discoverMedia(mediaType, { genreId, providers } = {}) {
   const params = { sort_by: 'popularity.desc', include_adult: 'false', watch_region: 'US' }
   if (genreId) params.with_genres = String(genreId)

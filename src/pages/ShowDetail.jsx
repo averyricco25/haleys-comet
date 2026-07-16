@@ -4,6 +4,8 @@ import { getShowWithEpisodes, stripHtml, groupBySeason } from '../lib/tvmaze'
 import { useShows } from '../context/ShowsContext'
 import RatingStars from '../components/RatingStars'
 import NoteBox from '../components/NoteBox'
+import StreamingBar from '../components/StreamingBar'
+import { isTmdbConfigured, searchTv, findTvByImdb, watchProviders } from '../lib/tmdb'
 
 export default function ShowDetail() {
   const { id } = useParams()
@@ -34,6 +36,16 @@ export default function ShowDetail() {
   if (!details) return <p className="muted center" style={{ marginTop: '4rem' }}>Loading…</p>
 
   const summary = stripHtml(details.summary)
+
+  const loadProviders = async () => {
+    if (!isTmdbConfigured) return null
+    let tmdbId = null
+    if (details.externals?.imdb) {
+      tmdbId = (await findTvByImdb(details.externals.imdb))?.id || null
+    }
+    if (!tmdbId) tmdbId = (await searchTv(details.name))?.[0]?.id || null
+    return tmdbId ? watchProviders('tv', tmdbId) : null
+  }
 
   const runtimeOf = (ep) => ep.runtime || details.averageRuntime || 40
   const minutesFor = (watchedList) => {
@@ -140,6 +152,8 @@ export default function ShowDetail() {
           )}
         </div>
       </div>
+
+      <StreamingBar load={loadProviders} loadKey={details.id} />
 
       <div className="status-row">
         <button className={`btn btn-status${saved?.status === 'watchlist' ? ' active' : ''}`} onClick={() => setStatus('watchlist')}>

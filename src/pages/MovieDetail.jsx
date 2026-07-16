@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { lookupMovie, posterUrl } from '../lib/tmdb'
+import { lookupMovie, posterUrl, watchProviders } from '../lib/tmdb'
 import { useShows } from '../context/ShowsContext'
 import RatingStars from '../components/RatingStars'
 import NoteBox from '../components/NoteBox'
+import StreamingBar from '../components/StreamingBar'
 
 const formatRuntime = (min) => (min ? `${Math.floor(min / 60)}h ${min % 60}m` : null)
 
@@ -85,6 +86,8 @@ export default function MovieDetail() {
           {movie.runtime > 0 && <p className="detail-meta">{formatRuntime(movie.runtime)}</p>}
         </div>
       </div>
+
+      <StreamingBar load={() => watchProviders('movie', movie.id)} loadKey={movie.id} />
 
       <div className="status-row">
         <button className={`btn btn-status${saved?.status === 'watchlist' ? ' active' : ''}`} onClick={() => setStatus('watchlist')}>
