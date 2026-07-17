@@ -85,11 +85,10 @@ export default function MovieDetail() {
           <div className="title-row">
             <h1>{movie.title}</h1>
             <button
-              className="fav-btn"
+              className={`fav-pill${saved?.favorite ? ' active' : ''}`}
               onClick={toggleFavorite}
-              aria-label={saved?.favorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              {saved?.favorite ? '❤️' : '🤍'}
+              {saved?.favorite ? '★ Favorited' : '☆ Favorite'}
             </button>
           </div>
           <p className="detail-meta">

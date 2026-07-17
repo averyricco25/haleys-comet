@@ -6,7 +6,7 @@ import ShowCard from '../components/ShowCard'
 const TABS = [
   { key: 'watchlist', label: 'Want to Watch' },
   { key: 'watched', label: 'Watched' },
-  { key: 'favorites', label: '❤️ Favorites' },
+  { key: 'favorites', label: '⭐ Favorites' },
 ]
 
 export default function Movies() {
@@ -36,7 +36,7 @@ export default function Movies() {
           <p>
             {tab === 'watchlist' && 'No movies on your list yet.'}
             {tab === 'watched' && 'No movies watched yet.'}
-            {tab === 'favorites' && 'No favorites yet — tap the 🤍 on any movie to add one.'}
+            {tab === 'favorites' && 'No favorites yet — tap ☆ Favorite on any movie to add one.'}
           </p>
           <Link to="/search?mode=movies" className="btn btn-primary">Find a movie</Link>
         </div>
