@@ -380,6 +380,28 @@ ul { list-style: none; }
 .note-input:focus { outline: 2px solid var(--gold); outline-offset: -1px; }
 .note-input::placeholder { color: var(--text-dim); opacity: 0.7; }
 
+/* ---------- Genre chips ---------- */
+.genre-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.9rem;
+  scrollbar-width: none;
+}
+.genre-scroll::-webkit-scrollbar { display: none; }
+.genre-pill {
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: none;
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.genre-pill.active { background: var(--gold); color: #1a1400; }
+
 /* ---------- Recommendations ---------- */
 .rec-section { margin-top: 0.5rem; }
 .rec-row {

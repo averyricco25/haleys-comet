@@ -61,10 +61,12 @@ export async function findTvByImdb(imdbId) {
 
 export const providerLogo = (path) => (path ? `https://image.tmdb.org/t/p/w92${path}` : null)
 
-export async function discoverMedia(mediaType, { genreId, providers } = {}) {
-  const params = { sort_by: 'popularity.desc', include_adult: 'false', watch_region: 'US' }
-  if (genreId) params.with_genres = String(genreId)
+// genres: comma-separated TMDB genre ids (comma = AND, pipe = OR)
+export async function discoverMedia(mediaType, { genres, providers, sortBy, minVotes } = {}) {
+  const params = { sort_by: sortBy || 'popularity.desc', include_adult: 'false', watch_region: 'US' }
+  if (genres) params.with_genres = String(genres)
   if (providers?.length) params.with_watch_providers = providers.join('|')
+  if (minVotes) params['vote_count.gte'] = String(minVotes)
   const data = await get(`/discover/${mediaType}`, params)
   return data.results
 }

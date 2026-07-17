@@ -23,40 +23,84 @@ const mapTmdbItem = (r) => ({
   year: (r.release_date || r.first_air_date || '').slice(0, 4),
 })
 
-const TV_GENRES = [
-  ['😂 Comedy', 35],
-  ['🎭 Drama', 18],
-  ['🕵️ Crime', 80],
-  ['🚀 Sci-Fi & Fantasy', 10765],
-  ['📸 Reality', 10764],
-]
-const MOVIE_GENRES = [
-  ['😂 Comedy', 35],
-  ['👻 Horror', 27],
-  ['💥 Action', 28],
-  ['💘 Romance', 10749],
-  ['🔪 Thriller', 53],
-]
+// Genre chips: TMDB's standard genre taxonomy, plus True Crime (Crime AND Documentary)
+const GENRE_CHIPS = {
+  shows: [
+    { key: 'truecrime', emoji: '🔎', name: 'True Crime', genres: '80,99' },
+    { key: 'crime', emoji: '🕵️', name: 'Crime', genres: '80' },
+    { key: 'drama', emoji: '🎭', name: 'Drama', genres: '18' },
+    { key: 'comedy', emoji: '😂', name: 'Comedy', genres: '35' },
+    { key: 'mystery', emoji: '❓', name: 'Mystery', genres: '9648' },
+    { key: 'reality', emoji: '📸', name: 'Reality', genres: '10764' },
+    { key: 'scifi', emoji: '🚀', name: 'Sci-Fi & Fantasy', genres: '10765' },
+    { key: 'action', emoji: '🗺️', name: 'Action & Adventure', genres: '10759' },
+    { key: 'animation', emoji: '✏️', name: 'Animation', genres: '16' },
+    { key: 'documentary', emoji: '🎥', name: 'Documentary', genres: '99' },
+    { key: 'family', emoji: '👨‍👩‍👧', name: 'Family', genres: '10751' },
+    { key: 'western', emoji: '🤠', name: 'Western', genres: '37' },
+  ],
+  movies: [
+    { key: 'truecrime', emoji: '🔎', name: 'True Crime', genres: '80,99' },
+    { key: 'horror', emoji: '👻', name: 'Horror', genres: '27' },
+    { key: 'thriller', emoji: '🔪', name: 'Thriller', genres: '53' },
+    { key: 'comedy', emoji: '😂', name: 'Comedy', genres: '35' },
+    { key: 'action', emoji: '💥', name: 'Action', genres: '28' },
+    { key: 'romance', emoji: '💘', name: 'Romance', genres: '10749' },
+    { key: 'drama', emoji: '🎭', name: 'Drama', genres: '18' },
+    { key: 'mystery', emoji: '❓', name: 'Mystery', genres: '9648' },
+    { key: 'scifi', emoji: '🚀', name: 'Science Fiction', genres: '878' },
+    { key: 'fantasy', emoji: '🐉', name: 'Fantasy', genres: '14' },
+    { key: 'animation', emoji: '✏️', name: 'Animation', genres: '16' },
+    { key: 'documentary', emoji: '🎥', name: 'Documentary', genres: '99' },
+    { key: 'family', emoji: '👨‍👩‍👧', name: 'Family', genres: '10751' },
+    { key: 'history', emoji: '🏛️', name: 'History', genres: '36' },
+    { key: 'western', emoji: '🤠', name: 'Western', genres: '37' },
+  ],
+}
+
+// Default (no genre selected) feed uses a sampler of these
+const SAMPLER_KEYS = {
+  shows: ['comedy', 'drama', 'crime', 'scifi', 'reality'],
+  movies: ['comedy', 'horror', 'action', 'romance', 'thriller'],
+}
 
 const feedCache = new Map()
 
-async function loadFeed(mode, providers) {
-  const key = `${mode}|${(providers || []).join(',')}`
+async function loadFeed(mode, providers, chip) {
+  const key = `${mode}|${(providers || []).join(',')}|${chip?.key || 'all'}`
   if (feedCache.has(key)) return feedCache.get(key)
   const mediaType = mode === 'movies' ? 'movie' : 'tv'
   const svc = providers?.length ? ' on your services' : ''
-  const jobs = [[`🔥 Trending ${mode === 'movies' ? 'movies' : 'shows'} this week`, trending(mediaType)]]
-  if (mode === 'movies') jobs.push(['🎬 New in theaters', nowPlayingMovies()])
-  jobs.push([`⭐ Popular${svc}`, discoverMedia(mediaType, { providers })])
-  for (const svcId of providers || []) {
-    const service = SERVICES.find((s) => s.id === svcId)
-    if (service) {
-      jobs.push([`${service.icon} Streaming on ${service.name}`, discoverMedia(mediaType, { providers: [svcId] })])
+  const jobs = []
+
+  if (chip) {
+    // Genre-tailored feed
+    const dateSort = mediaType === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc'
+    jobs.push([`⭐ Popular ${chip.name}`, discoverMedia(mediaType, { genres: chip.genres })])
+    jobs.push([`🆕 New ${chip.name}`, discoverMedia(mediaType, { genres: chip.genres, sortBy: dateSort, minVotes: 20 })])
+    jobs.push([`🏆 Top rated ${chip.name}`, discoverMedia(mediaType, { genres: chip.genres, sortBy: 'vote_average.desc', minVotes: 200 })])
+    for (const svcId of providers || []) {
+      const service = SERVICES.find((s) => s.id === svcId)
+      if (service) {
+        jobs.push([`${service.icon} ${chip.name} on ${service.name}`, discoverMedia(mediaType, { genres: chip.genres, providers: [svcId] })])
+      }
+    }
+  } else {
+    jobs.push([`🔥 Trending ${mode === 'movies' ? 'movies' : 'shows'} this week`, trending(mediaType)])
+    if (mode === 'movies') jobs.push(['🎬 New in theaters', nowPlayingMovies()])
+    jobs.push([`⭐ Popular${svc}`, discoverMedia(mediaType, { providers })])
+    for (const svcId of providers || []) {
+      const service = SERVICES.find((s) => s.id === svcId)
+      if (service) {
+        jobs.push([`${service.icon} Streaming on ${service.name}`, discoverMedia(mediaType, { providers: [svcId] })])
+      }
+    }
+    for (const k of SAMPLER_KEYS[mode]) {
+      const g = GENRE_CHIPS[mode].find((c) => c.key === k)
+      jobs.push([`${g.emoji} ${g.name}${svc}`, discoverMedia(mediaType, { genres: g.genres, providers })])
     }
   }
-  for (const [label, genreId] of mode === 'movies' ? MOVIE_GENRES : TV_GENRES) {
-    jobs.push([`${label}${svc}`, discoverMedia(mediaType, { genreId, providers })])
-  }
+
   const settled = await Promise.allSettled(jobs.map((j) => j[1]))
   const rows = settled
     .map((s, i) => ({
@@ -74,6 +118,8 @@ export default function Search() {
   const { user } = useAuth()
   const { shows, loaded } = useShows()
   const mode = params.get('mode') === 'movies' ? 'movies' : 'shows'
+  const genreKey = params.get('genre')
+  const chip = GENRE_CHIPS[mode].find((c) => c.key === genreKey) || null
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const [searching, setSearching] = useState(false)
@@ -98,8 +144,15 @@ export default function Search() {
   useEffect(() => {
     if (!isTmdbConfigured || services === null) return
     setFeed(null)
-    loadFeed(mode, services).then(setFeed).catch(() => setFeed([]))
-  }, [mode, services])
+    loadFeed(mode, services, chip).then(setFeed).catch(() => setFeed([]))
+  }, [mode, services, genreKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pickGenre = (key) => {
+    const next = {}
+    if (mode === 'movies') next.mode = 'movies'
+    if (key && key !== genreKey) next.genre = key
+    setParams(next, { replace: true })
+  }
 
   const openRecShow = async (rec) => {
     setResolving(true)
@@ -171,6 +224,20 @@ export default function Search() {
     runSearch(query, m)
   }
 
+  const genreBar = (
+    <div className="genre-scroll">
+      {GENRE_CHIPS[mode].map((c) => (
+        <button
+          key={c.key}
+          className={`genre-pill${genreKey === c.key ? ' active' : ''}`}
+          onClick={() => pickGenre(c.key)}
+        >
+          {c.emoji} {c.name}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
     <>
       <header className="page-header">
@@ -227,12 +294,15 @@ export default function Search() {
       </ul>
       {!results && !searching && isTmdbConfigured && (
         <>
+          {genreBar}
           {resolving && <p className="muted center">Opening…</p>}
-          <RecRow
-            title={mode === 'movies' ? '✨ Movies for you' : '✨ Shows for you'}
-            items={mode === 'movies' ? recs?.movies : recs?.shows}
-            onOpen={openItem}
-          />
+          {!chip && (
+            <RecRow
+              title={mode === 'movies' ? '✨ Movies for you' : '✨ Shows for you'}
+              items={mode === 'movies' ? recs?.movies : recs?.shows}
+              onOpen={openItem}
+            />
+          )}
           {feed === null && <p className="muted center">Loading Discover…</p>}
           {(feed || []).map((row) => (
             <RecRow key={row.title} title={row.title} items={row.items} onOpen={openItem} />
