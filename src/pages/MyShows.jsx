@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useShows } from '../context/ShowsContext'
 import ShowCard from '../components/ShowCard'
+import FavRow from '../components/FavRow'
 
 const TABS = [
   { key: 'watching', label: 'Watching' },
@@ -16,11 +17,16 @@ export default function MyShows() {
     .filter((s) => s.type !== 'movie' && s.status === tab)
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
 
+  const favorites = Object.values(shows)
+    .filter((s) => s.type !== 'movie' && s.favorite)
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+
   return (
     <>
       <header className="page-header">
         <h1>My Shows</h1>
       </header>
+      <FavRow items={favorites} />
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t.key} className={`tab${tab === t.key ? ' active' : ''}`} onClick={() => setTab(t.key)}>

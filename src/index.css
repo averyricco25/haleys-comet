@@ -189,6 +189,10 @@ ul { list-style: none; }
   background: var(--bg-card);
 }
 .detail-head h1 { font-size: 1.35rem; font-weight: 800; line-height: 1.2; margin-bottom: 0.4rem; }
+.title-row { display: flex; align-items: flex-start; gap: 0.5rem; }
+.title-row h1 { flex: 1; }
+.fav-btn { background: none; border: none; font-size: 1.35rem; padding: 0; line-height: 1.2; }
+.fav-btn:active { transform: scale(1.25); }
 .detail-meta { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.25rem; }
 .genre-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
 .genre-chip {

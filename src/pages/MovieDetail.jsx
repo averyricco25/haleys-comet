@@ -43,6 +43,7 @@ export default function MovieDetail() {
     runtime: movie.runtime || null,
     rating: saved?.rating || 0,
     notes: saved?.notes || '',
+    favorite: saved?.favorite || false,
     status: saved?.status || null,
   })
 
@@ -67,6 +68,10 @@ export default function MovieDetail() {
     saveShow({ ...baseDoc(), status: saved?.status || 'watched', notes })
   }
 
+  const toggleFavorite = () => {
+    saveShow({ ...baseDoc(), status: saved?.status || 'watched', favorite: !saved?.favorite })
+  }
+
   return (
     <div className="detail">
       <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
@@ -77,7 +82,16 @@ export default function MovieDetail() {
           <div className="detail-poster poster-empty">🎬</div>
         )}
         <div className="detail-head">
-          <h1>{movie.title}</h1>
+          <div className="title-row">
+            <h1>{movie.title}</h1>
+            <button
+              className="fav-btn"
+              onClick={toggleFavorite}
+              aria-label={saved?.favorite ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {saved?.favorite ? '❤️' : '🤍'}
+            </button>
+          </div>
           <p className="detail-meta">
             {[movie.release_date?.slice(0, 4), movie.genres?.map((g) => g.name).slice(0, 2).join(', ')]
               .filter(Boolean)

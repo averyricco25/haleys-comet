@@ -67,6 +67,7 @@ export default function ShowDetail() {
     watched: saved?.watched || [],
     watchedMinutes: minutesFor(saved?.watched || []),
     notes: saved?.notes || '',
+    favorite: saved?.favorite || false,
     status: saved?.status || null,
   })
 
@@ -94,6 +95,10 @@ export default function ShowDetail() {
 
   const saveNote = (notes) => {
     saveShow({ ...baseDoc(), status: saved?.status || 'watching', notes })
+  }
+
+  const toggleFavorite = () => {
+    saveShow({ ...baseDoc(), status: saved?.status || 'watching', favorite: !saved?.favorite })
   }
 
   const toggleEpisode = (epId) => {
@@ -134,7 +139,16 @@ export default function ShowDetail() {
           <div className="detail-poster poster-empty">📺</div>
         )}
         <div className="detail-head">
-          <h1>{details.name}</h1>
+          <div className="title-row">
+            <h1>{details.name}</h1>
+            <button
+              className="fav-btn"
+              onClick={toggleFavorite}
+              aria-label={saved?.favorite ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {saved?.favorite ? '❤️' : '🤍'}
+            </button>
+          </div>
           <p className="detail-meta">
             {[details.premiered?.slice(0, 4), details.network?.name || details.webChannel?.name, details.status]
               .filter(Boolean)
