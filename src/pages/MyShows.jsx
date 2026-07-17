@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useShows } from '../context/ShowsContext'
 import ShowCard from '../components/ShowCard'
-import FavRow from '../components/FavRow'
 
 const TABS = [
   { key: 'watching', label: 'Watching' },
   { key: 'finished', label: 'Finished' },
+  { key: 'favorites', label: '❤️ Favorites' },
 ]
 
 export default function MyShows() {
@@ -14,11 +14,8 @@ export default function MyShows() {
   const [tab, setTab] = useState('watching')
 
   const list = Object.values(shows)
-    .filter((s) => s.type !== 'movie' && s.status === tab)
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-
-  const favorites = Object.values(shows)
-    .filter((s) => s.type !== 'movie' && s.favorite)
+    .filter((s) => s.type !== 'movie')
+    .filter((s) => (tab === 'favorites' ? s.favorite : s.status === tab))
     .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
 
   return (
@@ -26,7 +23,6 @@ export default function MyShows() {
       <header className="page-header">
         <h1>My Shows</h1>
       </header>
-      <FavRow items={favorites} />
       <div className="tabs">
         {TABS.map((t) => (
           <button key={t.key} className={`tab${tab === t.key ? ' active' : ''}`} onClick={() => setTab(t.key)}>
@@ -37,7 +33,11 @@ export default function MyShows() {
       {loaded && list.length === 0 ? (
         <div className="empty">
           <span className="empty-icon">🛸</span>
-          <p>{tab === 'watching' ? "You're not watching anything yet." : 'Nothing finished yet.'}</p>
+          <p>
+            {tab === 'watching' && "You're not watching anything yet."}
+            {tab === 'finished' && 'Nothing finished yet.'}
+            {tab === 'favorites' && 'No favorites yet — tap the 🤍 on any show to add one.'}
+          </p>
           <Link to="/search" className="btn btn-primary">Find a show</Link>
         </div>
       ) : (
