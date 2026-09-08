@@ -129,6 +129,12 @@ export default function Search() {
   const [services, setServices] = useState(null)
   const [resolving, setResolving] = useState(false)
   const debounce = useRef(null)
+  const searchRequest = useRef(0)
+
+  useEffect(() => () => {
+    clearTimeout(debounce.current)
+    searchRequest.current += 1
+  }, [])
 
   useEffect(() => {
     if (!isTmdbConfigured) return
@@ -143,8 +149,12 @@ export default function Search() {
 
   useEffect(() => {
     if (!isTmdbConfigured || services === null) return
+    let cancelled = false
     setFeed(null)
-    loadFeed(mode, services, chip).then(setFeed).catch(() => setFeed([]))
+    loadFeed(mode, services, chip)
+      .then((rows) => { if (!cancelled) setFeed(rows) })
+      .catch(() => { if (!cancelled) setFeed([]) })
+    return () => { cancelled = true }
   }, [mode, services, genreKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pickGenre = (key) => {
@@ -168,8 +178,11 @@ export default function Search() {
   const openItem = mode === 'movies' ? (r) => navigate(`/movie/${r.id}`) : openRecShow
 
   const runSearch = async (q, m) => {
+    const request = ++searchRequest.current
     if (!q.trim()) {
       setResults(null)
+      setSearching(false)
+      setError(null)
       return
     }
     setSearching(true)
@@ -177,6 +190,7 @@ export default function Search() {
     try {
       if (m === 'movies') {
         const data = await searchMovies(q)
+        if (request !== searchRequest.current) return
         setResults(
           data.map((mv) => ({
             key: `movie-${mv.id}`,
@@ -190,6 +204,7 @@ export default function Search() {
         )
       } else {
         const data = await searchShows(q)
+        if (request !== searchRequest.current) return
         setResults(
           data.map(({ show }) => ({
             key: `show-${show.id}`,
@@ -205,15 +220,18 @@ export default function Search() {
         )
       }
     } catch {
+      if (request !== searchRequest.current) return
       setError("Couldn't reach the search service. Check your connection and try again.")
     } finally {
-      setSearching(false)
+      if (request === searchRequest.current) setSearching(false)
     }
   }
 
   const onChange = (e) => {
     const q = e.target.value
     setQuery(q)
+    searchRequest.current += 1
+    setSearching(Boolean(q.trim()))
     clearTimeout(debounce.current)
     debounce.current = setTimeout(() => runSearch(q, mode), 400)
   }
